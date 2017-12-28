@@ -19,7 +19,7 @@ with pattern(expr) as match:
 def g(x):
   return x+1
   
-#pattern(val[int][int], val[int])
+@pattern(val[int][int], val[int])
 def g(f, x):
   return f(x)
 
