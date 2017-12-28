@@ -11,7 +11,7 @@ expr = (1, (2, lambda x: x), [f])
 with pattern(expr) as match:
   for a, b in match.case(val, val):
     raise
-  for a, b, c in match.case(val[int], (val[int], _), val[][int]):
+  for a, b, c in match.case(val[int], (val[int], _), [val[][int]]):
     assert b == 2
 
 # overload
