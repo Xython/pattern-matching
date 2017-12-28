@@ -19,7 +19,8 @@ with pattern(expr) as match:
 def g(x):
   return x+1
   
-@pattern(val[int][int], val[int])
+@pattern(val[int][int]/1, val[int])  
+# val[int][int]/1 : an function of type `int=>int`, which has 1 argument
 def g(f, x):
   return f(x)
 
