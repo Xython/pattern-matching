@@ -66,9 +66,9 @@ class LinkedList:
         else:
             n = self.head
             while n.next:
-                yield n
+                yield n.content
                 n = n.next
-            yield n
+            yield n.content
 
     def __repr__(self):
         return self.__str__()
@@ -82,15 +82,19 @@ class LinkedList:
 
     @property
     def to_list(self):
-        return [e.content for e in self]
+        return list(self)
 
     @property
     def to_tuple(self):
-        return tuple(e.content for e in self)
+        return tuple(self)
+
+    @property
+    def copy(self):
+        return LinkedList.from_iter(self)
 
     @staticmethod
     def from_iter(sequence):
         _list = LinkedList()
         for elem in sequence:
-            _list.append(elem)
+            _list.append_node(Node(elem))
         return _list
