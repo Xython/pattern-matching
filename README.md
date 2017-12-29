@@ -26,6 +26,9 @@ with Match(expr) as m:
       print('expr.f:', c[0].__name__)
       print('expr.1:', a)
       print('expr.lambda:', b.__name__)
+      res= 20
+
+assert res == 20
   
 # =>
 # expr.f:f
