@@ -3,33 +3,45 @@ Efficient pattern matching for standard python.
 
 
 ```python
-from destruct import pattern, val, _
+from destruct import Match, var, _, a, overload 
+from collections import Iterable
 
 def f()->int : return 1
+
 expr = (1, (2, lambda x: x), [f])
 
-with pattern(expr) as match:
-  for a, b in match.case(val, val):
-    raise
-  for a, b, c in match.case(val[int], (val[int], _), [val[][int]]):
-    assert b == 2
+with Match(expr) as m:
+    @m.case(var[int], _, var/0)
+    def abcdefg(a, f):
+      nonlocal res
+      res = f() + a
+
+    @m.case(_):
+    def hijklmn():
+      nonlocal res
+      res = 10
+
+    @m.case(var[int], (_, var/0), var[a<=Iterable])
+    def opq(a, b, c):
+      print('expr.f:', c[0].__name__)
+      print('expr.1:', a)
+      print('expr.lambda:', b.__name__)
+  
+# =>
+# expr.f:f
+# expr.1:1
+# expr.lambda:<lambda>
 
 # overload
-@pattern(val[int], _)
+@overload(var[int], _)
 def g(x):
   return x+1
-  
-@pattern(val[int][int]/1, val[int])  
-# val[int][int]/1 : a function of type `int=>int`, which has 1 argument
-def g(f, x):
-  return f(x)
 
-def int2int(a:int) -> int:
-  return a+1
+@overload(var/1, var[int])
+def g(f, a):
+  return f(a)
 
-print(g(10, 20))  #=> 11
-print(g(int2int, 10) #=> 11
+g(1, 10)  # => 2
+g(lambda x: x+1, 1)  # => 2
 
-  
-    
 ```
