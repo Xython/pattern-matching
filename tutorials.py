@@ -59,8 +59,8 @@ def is_type(x):
 
 
 with Match(1, 2, (3, int)) as m:
-    for a, b in m.case((var[int], var, var[list])):
-        print(a, b)
+    for a, b, c in m.case((var[int], var, var[list])):
+        print(a, b, c)
 
     for typ, in m.case((_, _, (_, var.when(is_type)))):
         print(typ)
