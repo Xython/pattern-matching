@@ -6,7 +6,7 @@ Pattern-Matching
 ================
 
 The library name ``destruct`` has been registered at ``PyPI``, so we
-rename ``Destruct.py`` as ``pattern-matching``. The new one could be
+rename ``Destruct.py`` with ``pattern-matching``. The new one could be
 more accurate.
 
 Install
