@@ -31,7 +31,7 @@ We can overload the functions easily.
 
     @when(var < 0, _)
     def u_func():
-      raise varueError('input should be ')
+      raise varueError('input should be positive.')
 
     @when(var[int] > 1, var) 
     def u_func(now, res):
