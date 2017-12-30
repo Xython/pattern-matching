@@ -1,6 +1,15 @@
-# Destruct.py
+[![Docs](https://img.shields.io/badge/docs-destruct!-blue.svg?style=flat)](https://github.com/Xython/Destruct.py/blob/master/docs.md)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/Xython/Destruct.py/blob/master/LICENSE)
+[![PyPI version](https://img.shields.io/pypi/v/pattern-matching.svg)](https://pypi.python.org/pypi/pattern-matching)
+
 Efficient pattern matching for standard python.
 
+# Pattern-Matching
+The library name `destruct` has been registered at `PyPI`, so we rename `Destruct.py` as `pattern-matching`. The new one could be more accurate.   
+
+## Install
+
+`pip install -U pattern-matching`.
 
 ## Example
 
@@ -9,7 +18,7 @@ Efficient pattern matching for standard python.
 We can overload the functions easily.
 
 ```python
-from destruct import Match, when, var, T, t, match_err, _
+from pattern_matching import Match, when, var, T, t, match_err, _, overwrite
 
 @when(_ == 1, var[int])
 def u_func(res):
@@ -43,7 +52,10 @@ with Match(1, 2, (3, int)) as m:
 # => <class 'int'>
 ```
 
-The document for the usage of `Pattern` will be presented sooner.
+## Document
+
+See the document [here](https://github.com/Xython/Destruct.py/blob/master/docs.md).
+
 
 
 

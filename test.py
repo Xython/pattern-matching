@@ -1,6 +1,6 @@
 
-from destruct import Match, when
-from destruct import var, T, t, match_err
+from pattern_matching import Match, when
+from pattern_matching import var, T, t, match_err
 
 if __name__ == '__main__':
 
@@ -68,7 +68,7 @@ if __name__ == '__main__':
             for x in m.case(var[T < Bound0]):
                 assert False
             for x in m.case(var[t >= Bound1]):
-                assert x == (inst,)
+                assert x == inst
 
 
     test_bound()

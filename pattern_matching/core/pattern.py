@@ -1,4 +1,4 @@
-from destruct.core.case_class import case_class, default_with
+from pattern_matching.core.case_class import case_class, default_with
 from inspect import getfullargspec
 from typing import Union, List
 import operator
@@ -274,7 +274,7 @@ class Var(Pattern):
                 return match_err
 
         if self.yield_out:
-            return now + (expr,)
+            return (expr,) + now
         else:
             return now
 

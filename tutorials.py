@@ -5,11 +5,10 @@ Created on Sat Dec 30 17:03:01 2017
 @author: misakawa
 """
 
-from destruct import Match, when, var, T, t, match_err, _
-from numba import jit
+from pattern_matching import Match, when, var, T, t, match_err, _, overwrite
 
 
-@when(var[(t == int) | (t == float)], var[(t == int) | (t == float)])
+@overwrite(var[(t == int) | (t == float)], var[(t == int) | (t == float)])
 def add(a, b):
     return a + b
 
@@ -65,3 +64,26 @@ with Match(1, 2, (3, int)) as m:
 
     for typ, in m.case((_, _, (_, var.when(is_type)))):
         print(typ)
+
+
+@overwrite(_ == None)
+def summary():
+    return 0
+
+
+@when([var[int], *(_ == [])], var)
+def summary(head, res):
+    return head + res
+
+
+@when([var[int], *var[list]], var)
+def summary(head, tail, res):
+    return summary(tail, res + head)
+
+
+@when(var[list])
+def summary(lst):
+    return summary(lst, 0)
+
+
+print(summary(list(range(12000))))

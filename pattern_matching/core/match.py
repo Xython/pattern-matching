@@ -1,6 +1,8 @@
-from destruct.core.pattern import Var, BasicType, Patch, match_err, Pattern, Type
+from pattern_matching.core.pattern import Var, BasicType, Patch, match_err, Pattern, Type
 from typing import Union, List, Dict, Tuple, Callable
 from collections import Iterator
+from pattern_matching.core.tco import TCO, tc_stack
+import numba as nb
 
 _matched = object()
 
@@ -111,17 +113,34 @@ class UnsolvedCase(Exception):
 class Overload:
     overloaded = dict()
 
-    def __init__(self, cases):
+    def __init__(self, name, cases):
         self.cases: Tuple[Union[Var, Type, Patch], Callable] = cases
+        self.name = name
 
     def __call__(self, *args, **kwargs):
+        """
+        Tail call optimization
+        """
+        res = self._call(*args, **kwargs)
+        if isinstance(res, tc_stack):
+            while isinstance(res, tc_stack):
+                res = self._call(*res.args, **res.kwargs)
+        return res
+
+    def _call(self, *args, **kwargs):
+
         for case, func in self.cases:
             to_match = (args, kwargs) if kwargs else (args,)
             matched = pattern_matching(to_match, case)
             if matched is match_err:
                 continue
             else:
-                return func(*matched)
+                if self.name in func.__globals__:
+                    with TCO(func, self.name) as _func:
+                        return _func(*matched)
+                else:
+                    return func(*matched)
+
         else:
             raise UnsolvedCase(f"No entry for args<{args}>, kwargs:<{kwargs}>")
 
@@ -132,10 +151,9 @@ class Overload:
         def register_fn(func: Callable):
             name = f'{func.__module__}.{func.__name__}'
             if name not in Overload.overloaded:
-                Overload.overloaded[name] = Overload([(patterns, func)])
+                Overload.overloaded[name] = Overload(func.__name__, [(patterns, func)])
             else:
                 Overload.overloaded[name].cases.append((patterns, func))
-            func.__globals__[func.__name__] = Overload.overloaded[name]
             return Overload.overloaded[name]
 
         return register_fn
@@ -146,8 +164,7 @@ class Overload:
 
         def register_fn(func: Callable):
             name = f'{func.__module__}.{func.__name__}'
-            Overload.overloaded[name] = Overload([(patterns, func)])
-            func.__globals__[func.__name__] = Overload.overloaded[name]
+            Overload.overloaded[name] = Overload(func.__name__, [(patterns, func)])
             return Overload.overloaded[name]
 
         return register_fn
