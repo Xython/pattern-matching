@@ -93,7 +93,8 @@ class Var:
                  type: Type = None,
                  arg_nums: int = -1,
                  yield_out: bool = True):
-
+        if not self.match_fns:
+            self.match_fns = []
         if not isinstance(type, Type) and type is not None:
             self.type = Type(set(), {type}, {type}, set(), False)
 
@@ -128,16 +129,22 @@ class Var:
         return self.compare_with(other, operator.ge)
 
     def __le__(self, other):
-        return self.compare_with(operator, operator.le)
+        return self.compare_with(other, operator.le)
 
     def __eq__(self, other):
-        return self.compare_with(operator, operator.eq)
+        return self.compare_with(other, operator.eq)
 
     def __gt__(self, other):
-        return self.compare_with(operator, operator.gt)
+        return self.compare_with(other, operator.gt)
 
     def __lt__(self, other):
-        return self.compare_with(operator, operator.lt)
+        return self.compare_with(other, operator.lt)
+
+    def when(self, condition):
+        return Var(self.match_fns + [condition],
+                   self.type,
+                   self.arg_nums,
+                   self.yield_out)
 
     def match(self, expr):
 
@@ -188,28 +195,28 @@ if __name__ == '__main__':
 
 
     def test_str_str():
-        assert var[str].match("")
+        assert var[str].match("") == ("", )
 
 
     test_str_str()
 
 
     def test_str_int():
-        assert var[str].match(1)
+        assert var[str].match(1) == _match_err
 
 
     test_str_int()
 
 
     def test_str_float():
-        assert var[str].match(1.0)
+        assert var[str].match(1.0) == _match_err
 
 
     test_str_float()
 
 
     def test_f0_nums():
-        assert (var / 0).match(test_f0_nums)
+        assert (var / 0).match(test_f0_nums) == (test_f0_nums, )
 
 
     test_f0_nums()
@@ -219,9 +226,16 @@ if __name__ == '__main__':
         def f2(a, b):
             pass
 
-        assert (var / 2).match(f2)
+        assert (var / 2).match(f2) == (f2, )
 
     test_f2_nums()
+
+    def test_var_eq():
+        assert (var == [1, 2, 3]).match([1, 2, 3]) == ([1, 2, 3], )
+        assert (var.when(lambda x: x < 10)).match(20) == _match_err
+
+    test_var_eq()
+
 
 # class Pattern:
 #     """
