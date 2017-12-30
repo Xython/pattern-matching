@@ -1,4 +1,4 @@
-from destruct.core.pattern import Var, Type, Patch, match_err
+from destruct.core.pattern import Var, BasicType, Patch, match_err, Pattern, Type
 from typing import Union, List, Dict, Tuple, Callable
 from collections import Iterator
 
@@ -42,7 +42,7 @@ class Match:
 
 
 def pattern_matching(expr, arg_pattern: Union[Var, Type, Patch, Iterator]):
-    if isinstance(arg_pattern, Var) or isinstance(arg_pattern, Type):
+    if isinstance(arg_pattern, Pattern):
         return arg_pattern.match(expr)
 
     elif isinstance(arg_pattern, list):
@@ -125,7 +125,7 @@ class Overload:
         patterns = (args, kwargs) if kwargs else (args,)
 
         def resgister_fn(func: Callable):
-            name = '{func.__module__}.{func.__name__}'
+            name = f'{func.__module__}.{func.__name__}'
             if name not in Overload.overloaded:
                 Overload.overloaded[name] = Overload([(patterns, func)])
             else:

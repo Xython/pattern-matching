@@ -1,5 +1,6 @@
-from destruct.core.match import Match, when
-from destruct.core.pattern import var, T, t, match_err
+
+from destruct import Match, when
+from destruct import var, T, t, match_err
 
 if __name__ == '__main__':
 

@@ -1,6 +1,6 @@
 from destruct.core.case_class import case_class, default_with
 from inspect import getfullargspec
-from typing import Union
+from typing import Union, List
 import operator
 from collections import namedtuple
 
@@ -9,7 +9,16 @@ Patch = namedtuple('Patch', ['var'])
 match_err = object()
 
 
-class Type:
+class Pattern:
+    def match(self, expr):
+        raise NotImplemented
+
+
+class Type(Pattern):
+    pass
+
+
+class BasicType(Type):
     @default_with(set)
     @case_class
     def __init__(self,
@@ -21,57 +30,65 @@ class Type:
         pass
 
     def __le__(self, other: type):
-        return Type(self.u_types ^ {other},
-                    self.inf,
-                    self.sup | {other},
-                    self.traits,
-                    self.yield_out)
+        return BasicType(self.u_types - {other},
+                         self.inf,
+                         self.sup | {other},
+                         self.traits,
+                         self.yield_out)
 
     def __ge__(self, other: type):
-        return Type(self.u_types ^ {other},
-                    self.inf | {other},
-                    self.sup,
-                    self.traits,
-                    self.yield_out)
+        return BasicType(self.u_types - {other},
+                         self.inf | {other},
+                         self.sup,
+                         self.traits,
+                         self.yield_out)
 
-    def __lt__(self, other):
-        return Type(self.u_types | {other},
-                    self.inf,
-                    self.sup | {other},
-                    self.traits,
-                    self.yield_out)
+    def __lt__(self, other: type):
+        return BasicType(self.u_types | {other},
+                         self.inf,
+                         self.sup | {other},
+                         self.traits,
+                         self.yield_out)
 
     def __gt__(self, other: type):
-        return Type(self.u_types | {other},
-                    self.inf | {other},
-                    self.sup,
-                    self.traits,
-                    self.yield_out)
+        return BasicType(self.u_types | {other},
+                         self.inf | {other},
+                         self.sup,
+                         self.traits,
+                         self.yield_out)
 
     def __eq__(self, other: type):
-        return Type(self.u_types ^ {other},
-                    self.inf | {other},
-                    self.sup | {other},
-                    self.traits,
-                    self.yield_out)
+        return BasicType(self.u_types - {other},
+                         self.inf | {other},
+                         self.sup | {other},
+                         self.traits,
+                         self.yield_out)
 
-    def __and__(self, other):
-        return Type(self.u_types | other.u_types,
-                    self.inf & other.inf,
-                    self.sup & other.sup,
-                    self.traits & other.traits)
+    def __ne__(self, other: type):
+        return BasicType(self.u_types | {other},
+                         self.inf,
+                         self.sup,
+                         self.traits,
+                         self.yield_out)
 
-    def __or__(self, other):
-        return Type(self.u_types & other.u_types,
-                    self.inf | other.inf,
-                    self.sup | other.sup,
-                    self.traits | other.traits)
+    def __and__(self, other: Type):
+        if not isinstance(other, Type):
+            other = BasicType(set(), {other}, {other}, set(), yield_out=False)
+        return IntersectionType((self, other))
+
+    def __or__(self, other: Type):
+        if not isinstance(other, Type):
+            other = BasicType(set(), {other}, {other}, set(), yield_out=False)
+        return UnionType((self, other))
+
+    def __invert__(self):
+        return DifferenceType(self)
 
     def __mod__(self, **kwargs):
-        return Type(self.u_types,
-                    self.inf,
-                    self.sup,
-                    set(kwargs.items()) | self.traits)
+        return BasicType(self.u_types,
+                         self.inf,
+                         self.sup,
+                         set(kwargs.items()) | self.traits)
 
     def match(self, expr: type):
         def isn(u_type):
@@ -94,17 +111,81 @@ class Type:
             return match_err
 
 
-class Var:
+class UnionType(Type):
+    def __init__(self, types: List[Type]):
+        self.types = types
+
+    def match(self, expr):
+        for typ in self.types:
+            e = typ.match(expr)
+            if e is not match_err:
+                return e
+        return match_err
+
+    def __and__(self, other):
+        return IntersectionType((self, other))
+
+    def __or__(self, other):
+        return UnionType((*self.types, other))
+
+    def __invert__(self):
+        return DifferenceType(self)
+
+
+class IntersectionType(Type):
+    def __init__(self, types: List[Type]):
+        self.types = types
+
+    def match(self, expr):
+        ret = []
+        for typ in self.types:
+            e = typ.match(expr)
+            if e is match_err:
+                return match_err
+            ret.extend(e)
+        return tuple(ret)
+
+    def __and__(self, other):
+        return IntersectionType((*self.types, other))
+
+    def __or__(self, other):
+        return UnionType((self, other))
+
+    def __invert__(self):
+        return DifferenceType(self)
+
+
+class DifferenceType(Type):
+    def __init__(self, type):
+        self.type = type
+
+    def match(self, expr):
+        e = self.type.match(expr)
+        if e is not match_err:
+            return match_err
+        return ()
+
+    def __and__(self, other):
+        return IntersectionType((self, other))
+
+    def __or__(self, other):
+        return UnionType((self, other))
+
+    def __not__(self):
+        return self.type
+
+
+class Var(Pattern):
     @case_class
     def __init__(self,
                  match_fns,
-                 type: Type = None,
+                 type: BasicType = None,
                  arg_nums: int = -1,
                  yield_out: bool = True):
         if not self.match_fns:
             self.match_fns = []
         if not isinstance(type, Type) and type is not None:
-            self.type = Type(set(), {type}, {type}, set(), False)
+            self.type = BasicType(set(), {type}, {type}, set(), False)
 
     def __call__(self, *args, **kwargs):
         return Var(self.match_fns,
@@ -118,9 +199,9 @@ class Var:
                    other,
                    self.yield_out)
 
-    def __getitem__(self, item: Union[type, Type]):
+    def __getitem__(self, item: Union[type, BasicType]):
         return Var(self.match_fns,
-                   item if isinstance(item, Type) else Type(set(), {item}, {item}, set(), False),
+                   item if isinstance(item, Type) else BasicType(set(), {item}, {item}, set(), False),
                    self.arg_nums,
                    self.yield_out)
 
@@ -201,6 +282,7 @@ class Var:
         yield Patch(self)
 
 
-T = Type(None)
-t = Type(None, yield_out=False)
+T = BasicType(None)
+t = BasicType(None, yield_out=False)
 var = Var(None)
+_ = Var(None, yield_out=False)

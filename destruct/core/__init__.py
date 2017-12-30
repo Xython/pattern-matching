@@ -1,3 +1,3 @@
-from destruct.core.case_class import case_class
-from destruct.core.match import Match, Overload
-from destruct.core.pattern import Var, T, t, match_err
+from .case_class import case_class
+from .match import Match, Overload, when
+from .pattern import var, T, t, match_err, _
