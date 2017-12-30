@@ -25,13 +25,18 @@ class Match:
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
 
-    def case(self, pattern):
+    def case(self, *pattern):
+        if len(pattern) is 1:
+            pattern = pattern[0]
+
         if self.expr is _matched:
             return
         res = pattern_matching(self.expr, pattern)
         if res is match_err:
             return
         else:
+            if isinstance(res, tuple) and len(res) is 1:
+                res = res[0]
             yield res
             self.expr = _matched
 
@@ -124,15 +129,29 @@ class Overload:
     def when(*args, **kwargs):
         patterns = (args, kwargs) if kwargs else (args,)
 
-        def resgister_fn(func: Callable):
+        def register_fn(func: Callable):
             name = f'{func.__module__}.{func.__name__}'
             if name not in Overload.overloaded:
                 Overload.overloaded[name] = Overload([(patterns, func)])
             else:
                 Overload.overloaded[name].cases.append((patterns, func))
+            func.__globals__[func.__name__] = Overload.overloaded[name]
             return Overload.overloaded[name]
 
-        return resgister_fn
+        return register_fn
+
+    @staticmethod
+    def overwrite(*args, **kwargs):
+        patterns = (args, kwargs) if kwargs else (args,)
+
+        def register_fn(func: Callable):
+            name = f'{func.__module__}.{func.__name__}'
+            Overload.overloaded[name] = Overload([(patterns, func)])
+            func.__globals__[func.__name__] = Overload.overloaded[name]
+            return Overload.overloaded[name]
+
+        return register_fn
 
 
 when = Overload.when
+overwrite = Overload.overwrite

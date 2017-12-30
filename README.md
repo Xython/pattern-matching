@@ -2,49 +2,49 @@
 Efficient pattern matching for standard python.
 
 
+## Example
+
+- Pattern Matching for functions. 
+
+We can overload the functions easily.
+
 ```python
-from destruct import Match, var, _, a, overload 
-from collections import Iterable
+from destruct import Match, when, var, T, t, match_err, _
 
-def f()->int : return 1
+@when(_ == 1, var[int])
+def u_func(res):
+    return res
 
-expr = (1, (2, lambda x: x), [f])
+@when(var < 0, _)
+def u_func():
+  raise varueError('input should be ')
 
-with Match(expr) as m:
-    @m.case(var[int], _, var/0)
-    def abcdefg(a, f):
-      nonlocal res
-      res = f() + a
+@when(var[int] > 1, var) 
+def u_func(now, res):
+  return u_func(now-1, res*now)
 
-    @m.case(_):
-    def hijklmn():
-      nonlocal res
-      res = 10
+@when(var[int])
+def u_func(now):
+  return u_func(now, 1)
 
-    @m.case(var[int], (_, var/0), var[a<=Iterable])
-    def opq(a, b, c):
-      print('expr.f:', c[0].__name__)
-      print('expr.1:', a)
-      print('expr.lambda:', b.__name__)
-      res= 20
-
-assert res == 20
-  
-# =>
-# expr.f:f
-# expr.1:1
-# expr.lambda:<lambda>
-
-# overload
-@overload(var[int], _)
-def g(x):
-  return x+1
-
-@overload(var/1, var[int])
-def g(f, a):
-  return f(a)
-
-g(1, 10)  # => 2
-g(lambda x: x+1, 1)  # => 2
-
+u_func(10, 1)  # => 3628800
 ```
+
+- Explicit pattern matching. 
+
+```python
+with Match(1, 2, (3, int)) as m:
+    for a, b in m.case((var[int], var, var[list])):
+        print(a, b)
+
+    for typ, in m.case((_, _, (_, var.when(is_type)))):
+        print(typ)
+
+# => <class 'int'>
+```
+
+The document for the usage of `Pattern` will be presented sooner.
+
+
+
+

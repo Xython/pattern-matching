@@ -53,3 +53,15 @@ def add(u):
 
 
 print(add(1, Bound1(), 'last'))
+
+
+def is_type(x):
+    return isinstance(x, type)
+
+
+with Match(1, 2, (3, int)) as m:
+    for a, b in m.case((var[int], var, var[list])):
+        print(a, b)
+
+    for typ, in m.case((_, _, (_, var.when(is_type)))):
+        print(typ)
