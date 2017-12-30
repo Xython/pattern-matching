@@ -1,4 +1,4 @@
-from destruct.core.case_class import case_class
+from destruct.core.case_class import case_class, default_with
 from inspect import getfullargspec
 from typing import Union
 import operator
@@ -6,10 +6,11 @@ from collections import namedtuple
 
 Patch = namedtuple('Patch', ['var'])
 
-_match_err = object()
+match_err = object()
 
 
 class Type:
+    @default_with(set)
     @case_class
     def __init__(self,
                  u_types: set,
@@ -17,12 +18,12 @@ class Type:
                  sup: set = None,
                  traits: set = None,
                  yield_out: bool = True):
-        return
+        pass
 
     def __le__(self, other: type):
         return Type(self.u_types ^ {other},
                     self.inf,
-                    self.sup | other,
+                    self.sup | {other},
                     self.traits,
                     self.yield_out)
 
@@ -90,7 +91,7 @@ class Type:
                 return expr,
             return ()
         else:
-            return _match_err
+            return match_err
 
 
 class Var:
@@ -159,13 +160,13 @@ class Var:
             now = self.type.match(expr.__class__)
         else:
             now = ()
-        if now is _match_err:
-            return _match_err
+        if now is match_err:
+            return match_err
 
         # check param nums
         if self.arg_nums is not -1:
             if not callable(expr):
-                return _match_err
+                return match_err
             arg_info = getfullargspec(expr)
             arg_least_num = len(arg_info.args) + len(arg_info.kwonlyargs)
             if hasattr(expr, '__self__'):  # instance bound method
@@ -175,21 +176,21 @@ class Var:
             if isinstance(self.arg_nums, tuple):
                 if len(self.arg_nums) is 1:
                     if self.arg_nums[0] < arg_least_num:
-                        return _match_err
+                        return match_err
                 else:
                     if has_var_arg or not (self.arg_nums[0] <= arg_least_num <= self.arg_nums[1]):
-                        return _match_err
+                        return match_err
             else:
                 assert isinstance(self.arg_nums, int)
                 if has_var_arg or arg_least_num != self.arg_nums:
-                    return _match_err
+                    return match_err
 
         if self.match_fns:
             def check_if_match(f):
                 return f(expr)
 
             if not all(map(check_if_match, self.match_fns)):
-                return _match_err
+                return match_err
 
         if self.yield_out:
             return now + (expr,)
@@ -200,108 +201,6 @@ class Var:
         yield Patch(self)
 
 
-if __name__ == '__main__':
-    var = Var(None)
-
-
-    def test_str_str():
-        assert var[str].match("") == ("",)
-
-
-    test_str_str()
-
-
-    def test_str_int():
-        assert var[str].match(1) == _match_err
-
-
-    test_str_int()
-
-
-    def test_str_float():
-        assert var[str].match(1.0) == _match_err
-
-
-    test_str_float()
-
-
-    def test_f0_nums():
-        assert (var / 0).match(test_f0_nums) == (test_f0_nums,)
-
-
-    test_f0_nums()
-
-
-    def test_f2_nums():
-        def f2(a, b):
-            pass
-
-        assert (var / 2).match(f2) == (f2,)
-
-
-    test_f2_nums()
-
-
-    def test_var_eq():
-        assert (var == [1, 2, 3]).match([1, 2, 3]) == ([1, 2, 3],)
-        assert (var.when(lambda x: x < 10)).match(20) == _match_err
-
-
-    test_var_eq()
-
-
-# class Pattern:
-#     """
-#     val: Pattern
-#     following ones are all of type `Pattern`:
-#
-#         val[int]        # a variable of type `int`
-#
-#         val(int)(int)   # a variable of type `int=>int`
-#
-#         val<int         # a variable whose type is subclass of int
-#
-#         val/3          # a callable variable which has 3 parameters.
-#
-#         val/(1, 3)      # a callable variable
-#                     which has 1~3 parameters
-#
-#         val/(1,)        # a callable variable
-#                     which has at least 1 variable
-#
-#         val.when(None)  # a variable
-#                     which can be destructed as a `None`(is/== None).
-#
-#     """
-#
-#     def __init__(self):
-#         self.match_fns = LinkedList.from_iter((constant_true,))
-#
-#     def __getitem__(self, u_type):
-#         raise NotImplemented
-#
-#     def __call__(self, *args, **kwargs):
-#
-#     def __gt__(self, other):
-#         raise NotImplemented
-#
-#     def __lt__(self, other):
-#         raise NotImplemented
-#
-#     def __ge__(self, other):
-#         raise NotImplemented
-#
-#     def __le__(self, other):
-#         raise NotImplemented
-#
-#     def __floordiv__(self, other):
-#         raise NotImplemented
-#
-#     def __truediv__(self, other):
-#         raise NotImplemented
-#
-#     def __eq__(self, other):
-#         raise NotImplemented
-#
-#     def when(self, pattern):
-#         raise NotImplemented
+T = Type(None)
+t = Type(None, yield_out=False)
+var = Var(None)

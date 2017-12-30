@@ -16,7 +16,20 @@ def case_class(init_fn):
                 self.__dict__[k] = v
             for k, v in kwargs.items():
                 self.__dict__[k] = v
-
         init_fn(self, *args, **kwargs)
 
     return call
+
+
+def default_with(default):
+    def wrap_init(init_fn):
+        def call(self, *args, **kwargs):
+            init_fn(self, *args, **kwargs)
+            for k in self.__dict__:
+                if not k.startswith('__') and self.__dict__[k] is None:
+                    self.__dict__[k] = default()
+        return call
+    return wrap_init
+
+
+
