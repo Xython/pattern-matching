@@ -1,9 +1,10 @@
-from linq import Flow
-from destruct.core.utils import constant_true, LinkedList
 from destruct.core.case_class import case_class
 from inspect import getfullargspec
 from typing import Union
 import operator
+from collections import namedtuple
+
+Patch = namedtuple('Patch', ['var'])
 
 _match_err = object()
 
@@ -64,6 +65,12 @@ class Type:
                     self.inf | other.inf,
                     self.sup | other.sup,
                     self.traits | other.traits)
+
+    def __mod__(self, **kwargs):
+        return Type(self.u_types,
+                    self.inf,
+                    self.sup,
+                    set(kwargs.items()) | self.traits)
 
     def match(self, expr: type):
         def isn(u_type):
@@ -146,7 +153,7 @@ class Var:
                    self.arg_nums,
                    self.yield_out)
 
-    def match(self, expr):
+    def match(self, expr: object):
 
         if self.type is not None:
             now = self.type.match(expr.__class__)
@@ -189,13 +196,16 @@ class Var:
         else:
             return now
 
+    def __iter__(self):
+        yield Patch(self)
+
 
 if __name__ == '__main__':
     var = Var(None)
 
 
     def test_str_str():
-        assert var[str].match("") == ("", )
+        assert var[str].match("") == ("",)
 
 
     test_str_str()
@@ -216,7 +226,7 @@ if __name__ == '__main__':
 
 
     def test_f0_nums():
-        assert (var / 0).match(test_f0_nums) == (test_f0_nums, )
+        assert (var / 0).match(test_f0_nums) == (test_f0_nums,)
 
 
     test_f0_nums()
@@ -226,13 +236,16 @@ if __name__ == '__main__':
         def f2(a, b):
             pass
 
-        assert (var / 2).match(f2) == (f2, )
+        assert (var / 2).match(f2) == (f2,)
+
 
     test_f2_nums()
 
+
     def test_var_eq():
-        assert (var == [1, 2, 3]).match([1, 2, 3]) == ([1, 2, 3], )
+        assert (var == [1, 2, 3]).match([1, 2, 3]) == ([1, 2, 3],)
         assert (var.when(lambda x: x < 10)).match(20) == _match_err
+
 
     test_var_eq()
 
