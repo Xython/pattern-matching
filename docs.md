@@ -3,9 +3,7 @@ These are all you need to import.
 from pattern_matching import var, _, T, t, when, Match, overwrite
 ```
 
-## Typing
-
-- Type matching
+## Type matching
 ```python
 # var is a "variable variable", t is type variable. 
 new_var = var[int]
@@ -19,7 +17,7 @@ f(1)
 # => (1, int)
 ```
 
-- Type matched but ignored.
+## Neglecting Matching for Type
 
 ```python
 @when(var[t == float]) 
@@ -30,7 +28,7 @@ f(1.0)
 # => 1.0
 ```
 
-- Variable matched but ignored.
+## Neglecting Matching for Variable
 
 ```python
 @when(_)
@@ -40,7 +38,7 @@ f(1) == f("...") == f(1e-3)
 # => True
 ```
 
-- Type boundaries.
+## Type Boundary
 
 ```python
 class MyList(list):
@@ -60,7 +58,7 @@ f({1, 2, 3})
 # => ({1, 2, 3}, list)
 ```
 
-- Pretend to be linked list.
+## Linked List
 
 Let use learn how to write functions in functional style.
 
@@ -84,6 +82,8 @@ summary([1, 2, 3])
 However, the codes above could be useless because it doesn't use tail call optimization.  
 Let us try a better one:
 
+## Tail Call Optimization
+
 ```python
 @overwrite(_ == None)
 def summary():
@@ -105,6 +105,20 @@ print(summary(list(range(12000))))
 ```
 
 However, because of the implementation of dynamic pattern matching, this `tco` could be not as quick as expected. Don't be frustrated because we have succeeded in avoiding stack overflow.
+
+
+To be continue.
+
+## Union Type
+
+## Intersection Type
+
+## Difference Type
+
+## Match Argument Numbers
+
+
+
 
 
 
