@@ -56,6 +56,8 @@ with Match(1, 2, (3, int)) as m:
 
 See the document [here](https://github.com/Xython/Destruct.py/blob/master/docs.md).
 
+Some codes as examples [here](https://github.com/Xython/pattern-matching/blob/master/tutorials.py).
+
 
 
 
