@@ -6,7 +6,7 @@ with open('./README.rst', encoding='utf-8') as f:
 setup(
     name='pattern-matching',
     long_description=readme,
-    version='0.1',
+    version='0.2',
     url='https://github.com/Xython/pattern-matching',
     license='MIT',
     author='thautwarm',
