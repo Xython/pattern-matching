@@ -13,6 +13,9 @@ class Pattern:
     def match(self, expr):
         raise NotImplemented
 
+    def __repr__(self):
+        return self.__str__()
+
 
 class Type(Pattern):
     pass
@@ -28,6 +31,10 @@ class BasicType(Type):
                  traits: set = None,
                  yield_out: bool = True):
         pass
+
+    def __str__(self):
+        return f'Type[{self.inf}<= this <={self.sup}' \
+               f'| this /= {self.utypes}, traits:{{{[ trait[0] for trait in self.traits]}}}]'
 
     def __le__(self, other: type):
         return BasicType(self.u_types - {other},
@@ -115,6 +122,9 @@ class UnionType(Type):
     def __init__(self, types: List[Type]):
         self.types = types
 
+    def __str__(self):
+        return 'Union[{}]'.format(', '.join([f'<{_type}>' for _type in self.types]))
+
     def match(self, expr):
         for typ in self.types:
             e = typ.match(expr)
@@ -133,6 +143,9 @@ class UnionType(Type):
 
 
 class IntersectionType(Type):
+    def __str__(self):
+        return 'Intersection[{}]'.format(', '.join([f'<{_type}>' for _type in self.types]))
+
     def __init__(self, types: List[Type]):
         self.types = types
 
@@ -156,6 +169,9 @@ class IntersectionType(Type):
 
 
 class DifferenceType(Type):
+    def __str__(self):
+        return f'Difference[{self.type}]'
+
     def __init__(self, type):
         self.type = type
 
@@ -186,6 +202,13 @@ class Var(Pattern):
             self.match_fns = []
         if not isinstance(type, Type) and type is not None:
             self.type = BasicType(set(), {type}, {type}, set(), False)
+
+    def __str__(self):
+        type = self.type if self.type is not None else 'any'
+        if self.arg_nums == -1:
+            return str(type)
+        else:
+            return f'{type}/{self.arg_nums}'
 
     def __call__(self, *args, **kwargs):
         return Var(self.match_fns,

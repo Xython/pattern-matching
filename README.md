@@ -2,7 +2,26 @@
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/Xython/Destruct.py/blob/master/LICENSE)
 [![PyPI version](https://img.shields.io/pypi/v/pattern-matching.svg)](https://pypi.python.org/pypi/pattern-matching)
 
-Efficient pattern matching for standard python.
+Efficient pattern matching for standard python.  
+`coroutines` makes it possible to flatten the function stacks, and `code-generator` makes it possible to use `TCO`'s syntax sugars.
+
+```python
+from pattern_matching.core.match import when, overwrite
+from pattern_matching import var, Using
+from numpy.random import randint
+
+with Using(scope=locals(), use_tco=True):
+    @overwrite((var, *var))
+    def qsort(head, tail):
+        lowers = [i for i in tail if i < head]
+        highers = [i for i in tail if i >= head]
+        return qsort(lowers) + [head] + qsort(highers)
+
+@when(var)
+def qsort(lst):
+    return lst
+print(qsort(randint(0, 2000, size=(1200, ))))
+```
 
 # Pattern-Matching
 The library name `destruct` has been registered at `PyPI`, so we rename `Destruct.py` with `pattern-matching`. The new one could be more accurate.

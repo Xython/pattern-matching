@@ -1,6 +1,26 @@
 |Docs| |License| |PyPI version|
 
-Efficient pattern matching for standard python.
+| Efficient pattern matching for standard python.
+| ``coroutines`` makes it possible to flatten the function stacks, and
+  ``code-generator`` makes it possible to use ``TCO``'s syntax sugars.
+
+.. code:: python
+
+    from pattern_matching.core.match import when, overwrite
+    from pattern_matching import var, Using
+    from numpy.random import randint
+
+    with Using(scope=locals(), use_tco=True):
+        @overwrite((var, *var))
+        def qsort(head, tail):
+            lowers = [i for i in tail if i < head]
+            highers = [i for i in tail if i >= head]
+            return qsort(lowers) + [head] + qsort(highers)
+
+    @when(var)
+    def qsort(lst):
+        return lst
+    print(qsort(randint(0, 2000, size=(1200, ))))
 
 Pattern-Matching
 ================
@@ -48,11 +68,14 @@ We can overload the functions easily.
 .. code:: python
 
     with Match(1, 2, (3, int)) as m:
-        for a, b in m.case((var[int], var, var[list])):
-            print(a, b)
+        for a, b, c in m.case((var[int], var, var[list])):  # not matched
+            print(a, b, c)
 
-        for typ, in m.case((_, _, (_, var.when(is_type)))):
+        for typ, in m.case((_, _, (_, var.when(is_type)))): # supposed to match here
             print(typ)
+
+        else:
+            print('none matched')
 
     # => <class 'int'>
 
@@ -61,6 +84,9 @@ Document
 
 See the document
 `here <https://github.com/Xython/Destruct.py/blob/master/docs.md>`__.
+
+Some codes as examples
+`here <https://github.com/Xython/pattern-matching/blob/master/tutorials.py>`__.
 
 .. |Docs| image:: https://img.shields.io/badge/docs-destruct!-blue.svg?style=flat
    :target: https://github.com/Xython/Destruct.py/blob/master/docs.md

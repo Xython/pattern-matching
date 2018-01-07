@@ -1,0 +1,20 @@
+Token utoken
+Any := R'[^\(\)\.]*';
+Expr ::= Call | Any ('.' Any)*;
+Call ::= Expr '(' Expr* ')'*;
+Stmts ::= Expr*;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
