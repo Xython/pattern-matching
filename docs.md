@@ -8,7 +8,7 @@ from pattern_matching import var, _, T, t, when, Match, overwrite
 # var is a "variable variable", t is type variable. 
 new_var = var[int]
 
-@when(var[T == int) \
+@when(var[T == int])
 # T means the type would be capture.
 def f(v, type_of_v):
     print(v, type_of_v)
