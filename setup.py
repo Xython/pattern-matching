@@ -6,7 +6,7 @@ with open('./README.rst', encoding='utf-8') as f:
 setup(
     name='pattern-matching',
     long_description=readme,
-    version='0.2',
+    version='0.3',
     url='https://github.com/Xython/pattern-matching',
     license='MIT',
     author='thautwarm',
@@ -21,7 +21,7 @@ setup(
         'Programming Language :: Python :: Implementation :: CPython'],
     zip_safe=False,
     install_requires=[
-        "EBNFParser",
+        "EBNFParser==1.1",
         "linq",
         "pipe_fn"
     ],
