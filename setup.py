@@ -6,14 +6,14 @@ with open('./README.rst', encoding='utf-8') as f:
 setup(
     name='pattern-matching',
     long_description=readme,
-    version='0.3',
+    version='1.0',
     url='https://github.com/Xython/pattern-matching',
     license='MIT',
     author='thautwarm',
     author_email='twshere@outlook.com',
     description='effective and graceful pattern matching for original python',
     include_package_data=True,
-    packages=['pattern_matching', 'pattern_matching.core', 'pattern_matching.core.parserlib'],
+    packages=['pattern_matching', 'pattern_matching.core'],
     platforms='any',
     classifiers=[
         'Programming Language :: Python :: 3.6',

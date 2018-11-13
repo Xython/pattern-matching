@@ -1,21 +1,14 @@
-
 from pattern_matching import Match, when
 from pattern_matching import var, T, t, match_err
 
 if __name__ == '__main__':
 
     def test_match_destruct():
-        with Match([1, 2, 3]) as m:
-            for a, b, c in m.case((var[int], var, var)):
-                assert [a, b, c] == [1, 2, 3]
-
-        with Match([1, 2, 3]) as m:
-            for a, b in m.case((var[int], *var[list])):
-                assert (a, b) == (1, [2, 3])
-
+        m = Match([1, 2, 3])
+        assert [1, 2, 3] == m.case(var[int], var, var).get
+        assert [1, [2, 3]] == m.case([var[int], *var[list]]).get
 
     test_match_destruct()
-
 
     @when(var / 2)
     def f(g):
@@ -57,19 +50,12 @@ if __name__ == '__main__':
 
 
     def test_bound():
-        with Match(Bound1()) as m:
-            for x in m.case(var[T >= Bound0]):
-                raise
-            else:
-                pass
-
+        m = Match(Bound1())
+        assert m.case(var[T >= Bound0])
         inst = Bound0()
-        with Match(inst) as m:
-            for x in m.case(var[T < Bound0]):
-                assert False
-            for x in m.case(var[t >= Bound1]):
-                assert x == inst
-
+        m = Match(inst)
+        assert not m.case(var[T < Bound0])
+        assert inst == m.case(var[t <= Bound1]).get
 
     test_bound()
 

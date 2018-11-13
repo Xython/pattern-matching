@@ -1,26 +1,26 @@
-from pattern_matching.core.pattern import Var, BasicType, Patch, match_err, Pattern, Type
+from pattern_matching.core.pattern import Var, TypeVar, Patch, match_err, Pattern, Type
 from typing import Union, List, Dict, Tuple, Callable
 from collections import Iterator
-from pattern_matching.core.tco import refactor, __MarkTCO__, __MarkReturn__
 
 _matched = object()
-_normal_return = object()
-_tco_frame = object()
+
+
+def _naming(obj):
+    module = getattr(obj, '__module__', None) or '__module__'
+    name = getattr(obj, '__name__', None) or str(id(obj))
+
+    return '%s.%s' % (module, name)
+
+
+class Result:
+    __slots__ = 'get'
+
+    def __init__(self, _):
+        self.get = _
 
 
 class Match:
-    """
-    with Match(expr) as match:
-        for (a, b) in match.case(pattern1):
-            do_something()
-        for (a, b, c) in match.case(pattern2):
-            do_something()
-        else:
-            print('matched nothing')
-    """
-
-    def __init__(self, *expr):
-        self.expr = expr[0] if len(expr) is 1 else expr
+    __slots__ = 'expr',
 
     def __enter__(self):
         return self
@@ -28,20 +28,24 @@ class Match:
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
 
+    def __init__(self, *expr):
+        self.expr = expr[0] if len(expr) is 1 else expr
+
     def case(self, *pattern):
         if len(pattern) is 1:
             pattern = pattern[0]
-
-        if self.expr is _matched:
+        pattern = pattern
+        expr = self.expr
+        if expr is _matched:
             return
-        res = pattern_matching(self.expr, pattern)
+
+        res = pattern_matching(expr, pattern)
         if res is match_err:
             return
-        else:
-            if isinstance(res, tuple) and len(res) is 1:
-                res = res[0]
-            yield res
-            self.expr = _matched
+
+        if isinstance(res, tuple) and len(res) is 1:
+            res = res[0]
+        return Result(res)
 
 
 def pattern_matching(expr, arg_pattern: Union[Var, Type, Patch, Iterator]):
@@ -129,130 +133,50 @@ class UnsolvedCase(Exception):
 
 class Overload:
     overloaded = dict()
-    scope = None
-    use_tco = False
 
     def __init__(self, name, cases):
-        self.cases: Tuple[Union[Var, Type, Patch], Callable, bool] = cases
+        self.cases: Tuple[Union[Var, Type, Patch], Callable] = cases
         self.name = name
 
     def __call__(self, *args, **kwargs):
-        """
-        Tail call optimization
-        """
-
-        status, res = self._call(*args, **kwargs)
-        if status is _normal_return:
-            return res
-
-        coroutines = [res]
-
-        last = None
-        while coroutines:
-            end = coroutines[-1]
-            try:
-                it = end.send(last)
-            except StopIteration:
-                it = __MarkReturn__, last
-
-            tc_state, tco_args = it
-
-            if tc_state is __MarkReturn__:
-                coroutines.pop()
-                last = tco_args
-
-            elif tc_state is __MarkTCO__:
-
-                status, res = self._call(*tco_args.args, **tco_args.kwargs)
-
-                if status is _normal_return:
-                    last = res
-                elif status is _tco_frame:
-                    coroutines.append(res)
-                    last = None
-                else:
-                    raise RuntimeError('Unknown TCO process.')
-
-        return last
-
-    def _call(self, *args, **kwargs):
-
-        for case, func, as_tco in self.cases:
-            to_match = (args, kwargs) if kwargs else (args,)
+        for case, func in self.cases:
+            to_match = (args, kwargs) if kwargs else (args, )
             matched = pattern_matching(to_match, case)
             if matched is match_err:
                 continue
-            else:
-                if not as_tco:
-                    return _normal_return, func(*matched)
-                return _tco_frame, func(*matched)
+            return func(*matched)
 
         else:
             raise UnsolvedCase(f"No entry for args<{args}>, kwargs:<{kwargs}>")
 
-    @staticmethod
-    def when(*args, **kwargs):
-        scope = Overload.scope
 
-        patterns = (args, kwargs) if kwargs else (args,)
+def when(*args, **kwargs):
+    patterns = (args, kwargs) if kwargs else (args, )
 
-        def register_fn(func: Callable):
-            nonlocal scope
+    def register_fn(func):
+        name = _naming(func)
+        if name not in Overload.overloaded:
+            Overload.overloaded[name] = Overload(func.__name__,
+                                                 [(patterns, func)])
+        else:
+            Overload.overloaded[name].cases.append((patterns, func))
+        return Overload.overloaded[name]
 
-            name = f'{func.__module__}.{func.__name__}'
-            if Overload.use_tco:
-                if not scope:
-                    scope = {}
-                fn, as_tco = refactor(scope, func, pattern=patterns), True
-            else:
-                fn, as_tco = func, False
-
-            if name not in Overload.overloaded:
-                Overload.overloaded[name] = Overload(func.__name__, [(patterns, fn, as_tco)])
-            else:
-                Overload.overloaded[name].cases.append((patterns, fn, as_tco))
-            return Overload.overloaded[name]
-
-        return register_fn
-
-    @staticmethod
-    def overwrite(*args, **kwargs):
-        scope = Overload.scope
-        patterns = (args, kwargs) if kwargs else (args,)
-
-        def register_fn(func: Callable):
-            nonlocal scope
-
-            name = f'{func.__module__}.{func.__name__}'
-            if Overload.use_tco:
-                if not scope:
-                    scope = {}
-                fn, as_tco = refactor(scope, func, pattern=patterns), True
-            else:
-                fn, as_tco = func, False
-            if name in Overload.overloaded:
-                Overload.overloaded[name].__init__(func.__name__, [(patterns, fn, as_tco)])
-            else:
-                Overload.overloaded[name] = Overload(func.__name__, [(patterns, fn, as_tco)])
-
-            return Overload.overloaded[name]
-
-        return register_fn
+    return register_fn
 
 
-when = Overload.when
-overwrite = Overload.overwrite
+def overwrite(*args, **kwargs):
+    patterns = (args, kwargs) if kwargs else (args, )
 
+    def register_fn(func):
+        name = _naming(func)
+        if name in Overload.overloaded:
+            Overload.overloaded[name].__init__(func.__name__,
+                                               [(patterns, func)])
+        else:
+            Overload.overloaded[name] = Overload(func.__name__,
+                                                 [(patterns, func)])
 
-class Using:
-    def __init__(self, scope, use_tco=False):
-        self.scope = scope
-        self.use_tco = use_tco
+        return Overload.overloaded[name]
 
-    def __enter__(self):
-        Overload.scope = self.scope
-        Overload.use_tco = self.use_tco
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        Overload.scope = None
-        Overload.use_tco = False
+    return register_fn

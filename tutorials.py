@@ -5,7 +5,8 @@ Created on Sat Dec 30 17:03:01 2017
 @author: misakawa
 """
 
-from pattern_matching import Match, when, var, T, t, match_err, _, overwrite
+from pattern_matching import Match, when, var, T, t, _, overwrite
+from numpy.random import randint
 
 
 @overwrite(var[(t == int) | (t == float)], var[(t == int) | (t == float)])
@@ -27,23 +28,28 @@ class Bound2:
 
 
 class Bound3(Bound1, Bound2):
+
     def __repr__(self):
         return "bound3"
-
-    pass
 
 
 class Bound4(Bound3):
     pass
 
 
-@when(var[(t == Bound3) & (t > Bound4)])
-def add(x):
-    return x
+@when(_[(t != Bound3) & (t < Bound4)])
+def add():
+    return 2
 
 
-print(add(1, 1))
-print(add(Bound3()))
+@when(_)
+def add():
+    return 3
+
+
+assert add(1, 1) == 2
+assert add(Bound2()) == 2
+assert add(Bound3()) == 3
 
 
 @when(_[int], _[Bound1], var)
@@ -51,19 +57,19 @@ def add(u):
     return u
 
 
-print(add(1, Bound1(), 'last'))
+assert add(1, Bound1(), 'last') == 'last'
 
 
 def is_type(x):
     return isinstance(x, type)
 
 
-with Match(1, 2, (3, int)) as m:
-    for a, b, c in m.case((var[int], var, var[list])):
-        print(a, b, c)
+m = Match(1, 2, (3, int))
+[a, b, c] = m.case(var[int], var, *var[tuple]).get
+assert a == 1 and b == 2 and c == ((3, int), )
 
-    for typ, in m.case((_, _, (_, var.when(is_type)))):
-        print(typ)
+[c2] = m.case((_, _, (_, var.when(is_type)))).get
+assert c2 == int
 
 
 @overwrite(_ == None)
@@ -86,4 +92,39 @@ def summary(lst):
     return summary(lst, 0)
 
 
-print(summary(list(range(12000))))
+assert summary(list(range(100))) == 4950
+
+
+@overwrite([var, *var])
+def qsort(head, tail):
+    lowers = [i for i in tail if i < head]
+    highers = [i for i in tail if i >= head]
+    return qsort(lowers) + [head] + qsort(highers)
+
+
+@when(var)
+def qsort(lst):
+    return lst
+
+
+qsort(randint(0, 500, size=(1200, )))
+
+
+@when(_[t.when(lambda _: _ == int)])
+def trait_test():
+    return 1
+
+
+assert trait_test(1) == 1
+
+
+class Population:
+    num: int = 1000
+
+
+@when(var[t.when(lambda _: hasattr(_, 'num'))])
+def trait_test(x):
+    return x.num
+
+
+assert trait_test(Population()) == 1000
