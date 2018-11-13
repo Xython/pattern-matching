@@ -184,7 +184,7 @@ disp(A())
 
 You can apply `.when(predicate)` methods on `pattern_matching.T/t` .
 
-To avoid subclassing.
+For instance, to avoid subclassing, follow this:
 ```python
 class A:
     pass
