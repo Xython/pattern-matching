@@ -19,10 +19,5 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: Implementation :: CPython'],
-    zip_safe=False,
-    install_requires=[
-        "EBNFParser==1.1",
-        "linq",
-        "pipe_fn"
-    ],
+    zip_safe=False
 )
